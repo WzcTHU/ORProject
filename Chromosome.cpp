@@ -86,6 +86,7 @@ int GoBack(Node &start_node, Vehicle &this_vehicle, vector<Gene> &routine) {
 	if (this_vehicle.LeftElec >= DisNN[start_node.ID][0]) {
 		//电量足够返回车场
 		this_vehicle.TotalDis += DisNN[start_node.ID][0];			//更新行驶距离
+		this_vehicle.LeftElec -= DisNN[start_node.ID][0];
 		start_node = NodeList[0];
 		Gene this_G;
 		this_G.vehicle = this_vehicle;
@@ -146,16 +147,29 @@ void Deliver(Node &start_node, int TargetGuestID, Vehicle &this_vehicle) {
 void Chromosome::BuildInitGreedy() {
 	srand((unsigned int)time(NULL));
 	vector<int> VisitedGuest = {};		//用于保存已访问的客户ID
-	for (auto i : VehicleID) {		//对每一辆车进行循环
+	for (int i = 1; i <= VehicleID.size(); i++) {		//对每一辆车进行循环
 		if (VisitedGuest.size() == GUEST_NUM) break;
 		Node start_node = NodeList[0];		//每一辆车都是从车场出发
-		float dice = rand() / double(RAND_MAX);
-		int type = (dice > 0.5) ? 1 : 2;	//以0.5的概率从1，2类型里面选择一种车
+		int job_finish_by_time = 0;
+		int job_finish_by_elec = 0;
+		int change_type_2 = 0;				//强制使用大车
+		int type = 1;
+		int state = -1;			//用于记录当前构造完的routine是否可行
+
+		if (change_type_2 == 0) {
+			float dice = rand() / double(RAND_MAX);
+			type = (dice > 0.5) ? 1 : 2;	//以0.5的概率从1，2类型里面选择一种车
+		}
+		else if (change_type_2 == 1) {
+			type = 2;
+			change_type_2 = 0;				//清空强制转换标记
+		}
+
 		Vehicle this_vehicle(type, i);		//实例化选中的车
+
+		TravelAgain:
+
 		vector<Gene> routine = {};			//用于保存某辆车形成的回路
-
-		int state = 0;			//用于记录当前构造完的routine是否可行
-
 		Gene this_G;
 		this_G.vehicle = this_vehicle;
 		this_G.node = start_node;
@@ -163,6 +177,12 @@ void Chromosome::BuildInitGreedy() {
 
 		//拷贝一个已访问列表，防止某条routine失效时其已访问节点被记录到VisitedGuest中
 		vector<int> TempVisitedGuest(VisitedGuest);
+
+
+		//cout << VisitedGuest.size() << endl;
+		//if (VisitedGuest.size() == 1000) {
+		//	int stop = 0;
+		//}
 		while (1) {			//对同一辆车，构造完其送货子序列(routine)
 			vector<int>::const_iterator start = DisNN[start_node.ID].begin();
 			vector<int>::const_iterator end = start + GUEST_NUM + DEPOT_NUM;
@@ -172,6 +192,7 @@ void Chromosome::BuildInitGreedy() {
 			if (TargetGuestID[0] == -1) {
 				//即FindClosest()返回-1，所有客户点都已经到达，则执行返回车场操作
 				state = GoBack(start_node, this_vehicle, routine);
+				job_finish_by_time = 1;				//借用强制退出标记
 				break;
 			}
 			
@@ -191,7 +212,9 @@ void Chromosome::BuildInitGreedy() {
 						vector<int>::const_iterator end = start + CHARGE_NUM;
 						vector<int> neighbour_charge(start, end);			//截取充电桩向量(每一行)
 						int TargetChargeID = FindClosest(early_ID, neighbour_charge, {}, 0)[0] + GUEST_NUM + DEPOT_NUM;
-						if (this_vehicle.LeftElec - DisNN[start_node.ID][early_ID] >= DisNN[early_ID][TargetChargeID]) {
+						if ((this_vehicle.LeftElec - DisNN[start_node.ID][early_ID] \
+							>= DisNN[early_ID][TargetChargeID]) || (this_vehicle.LeftElec -\
+							DisNN[start_node.ID][early_ID] >= DisNN[early_ID][0])) {
 							Deliver(start_node, early_ID, this_vehicle);
 							this_G.node = start_node;
 							this_G.vehicle = this_vehicle;
@@ -199,12 +222,17 @@ void Chromosome::BuildInitGreedy() {
 							TempVisitedGuest.push_back(start_node.ID);			//将当前点加入已访问客户列表
 						}
 						else {
+							//给出因电量耗尽而结束任务的标记
+							job_finish_by_elec = 1;
 							state = GoBack(start_node, this_vehicle, routine);
+							break;
 						}
 					}
 					else {
 						//不能在最晚服务时间之前到达，搜索下一个近邻点，如果所有近邻点都已经搜索过，则回车场
 						if (TargetGuestID.size() == 0) {
+							//给出由于因时间而结束的标记，该车不再从车场派出
+							job_finish_by_time = 1;
 							state = GoBack(start_node, this_vehicle, routine);
 							break;
 						}
@@ -229,6 +257,7 @@ void Chromosome::BuildInitGreedy() {
 					}
 					else {
 						//否则，返回车场
+						job_finish_by_elec = 1;
 						state = GoBack(start_node, this_vehicle, routine);
 						break;
 					}
@@ -239,6 +268,14 @@ void Chromosome::BuildInitGreedy() {
 			//不需要对车场关闭时间进行额外判断
 			else {	
 				//容量不足，回车场
+				if (NodeList[early_ID].Volume >= this_vehicle.Volume) {
+					job_finish_by_time = 1;			//只是借用这个标记，直接退出当前routine，改用大车
+					change_type_2 = 1;
+				}
+				if (NodeList[early_ID].Weight >= this_vehicle.Weight) {
+					job_finish_by_time = 1;			//只是借用这个标记，直接退出当前routine，改用大车
+					change_type_2 = 1;
+				}
 				state = GoBack(start_node, this_vehicle, routine);
 				break;
 			}
@@ -247,6 +284,25 @@ void Chromosome::BuildInitGreedy() {
 			//成功返回车场，routine有效，则将其加入Sequence中，并将TempVisitedGuest保存为VisitedGuest
 			Sequence.insert(Sequence.end(), routine.begin(), routine.end());
 			VisitedGuest = TempVisitedGuest;
+			//若既不是因为到时也不是因为没电而结束任务，则回车场重新装货（不计装货时间），再次派出
+			if ((job_finish_by_time == 0) && (job_finish_by_elec == 0)) {
+				this_vehicle.CurVol = 0;
+				this_vehicle.CurWei = 0;
+
+				this_vehicle.CurTime += CHARGE_TIME;
+				this_vehicle.LeftElec = this_vehicle.DriveRange;
+
+				goto TravelAgain;
+			}
+			//如果是因为没电而结束任务，并且时间并未耗完，则回车场充电加装货（计充电时间），再次派出
+			if ((job_finish_by_elec == 1) && (job_finish_by_time == 0)) {
+				this_vehicle.CurVol = 0;
+				this_vehicle.CurWei = 0;
+				this_vehicle.CurTime += CHARGE_TIME;
+				this_vehicle.LeftElec = this_vehicle.DriveRange;
+				job_finish_by_elec = 0;
+				goto TravelAgain;
+			}
 		}
 	}
 }
