@@ -3,10 +3,13 @@
 #define BASIC_H
 #define UNLOAD_TIME 0.5 * 60
 #define CHARGE_TIME 0.5 * 60
+#define DEPOT_TIME 60
 #define GUEST_NUM 1000
 #define CHARGE_NUM 100
 #define DEPOT_NUM 1
 #define MAX_VEHICLE 1000
+#define WAIT_COST 24 / 60
+#define CHARGE_COST 50    //一次充电半小时，100RMB/h，这里为了方便使用充电次数计算，回车场充电不计成本
 #include<vector>
 #include<string>
 using std::vector;

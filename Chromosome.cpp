@@ -2,6 +2,7 @@
 #include<stdlib.h>
 #include<algorithm>
 #include<time.h>
+#include<fstream>
 #include"Chromosome.h"
 using namespace std;
 #define MAX_DIS 100000
@@ -151,7 +152,6 @@ void Chromosome::BuildInitGreedy() {
 		if (VisitedGuest.size() == GUEST_NUM) break;
 		Node start_node = NodeList[0];		//每一辆车都是从车场出发
 		int job_finish_by_time = 0;
-		int job_finish_by_elec = 0;
 		int change_type_2 = 0;				//强制使用大车
 		int type = 1;
 		int state = -1;			//用于记录当前构造完的routine是否可行
@@ -222,8 +222,6 @@ void Chromosome::BuildInitGreedy() {
 							TempVisitedGuest.push_back(start_node.ID);			//将当前点加入已访问客户列表
 						}
 						else {
-							//给出因电量耗尽而结束任务的标记
-							job_finish_by_elec = 1;
 							state = GoBack(start_node, this_vehicle, routine);
 							break;
 						}
@@ -257,7 +255,6 @@ void Chromosome::BuildInitGreedy() {
 					}
 					else {
 						//否则，返回车场
-						job_finish_by_elec = 1;
 						state = GoBack(start_node, this_vehicle, routine);
 						break;
 					}
@@ -284,27 +281,63 @@ void Chromosome::BuildInitGreedy() {
 			//成功返回车场，routine有效，则将其加入Sequence中，并将TempVisitedGuest保存为VisitedGuest
 			Sequence.insert(Sequence.end(), routine.begin(), routine.end());
 			VisitedGuest = TempVisitedGuest;
-			//若既不是因为到时也不是因为没电而结束任务，则回车场重新装货（不计装货时间），再次派出
-			if ((job_finish_by_time == 0) && (job_finish_by_elec == 0)) {
+			//只要不是因为到时而结束任务，则回车场重新装货、充电，再次派出
+			if (job_finish_by_time == 0) {
 				this_vehicle.CurVol = 0;
 				this_vehicle.CurWei = 0;
-
-				this_vehicle.CurTime += CHARGE_TIME;
+				this_vehicle.CurTime += DEPOT_TIME;
 				this_vehicle.LeftElec = this_vehicle.DriveRange;
-
-				goto TravelAgain;
-			}
-			//如果是因为没电而结束任务，并且时间并未耗完，则回车场充电加装货（计充电时间），再次派出
-			if ((job_finish_by_elec == 1) && (job_finish_by_time == 0)) {
-				this_vehicle.CurVol = 0;
-				this_vehicle.CurWei = 0;
-				this_vehicle.CurTime += CHARGE_TIME;
-				this_vehicle.LeftElec = this_vehicle.DriveRange;
-				job_finish_by_elec = 0;
+				this_vehicle.TotalWait += DEPOT_TIME;
 				goto TravelAgain;
 			}
 		}
 	}
 }
 
+void Chromosome::CalFitValue() {
+	int vehicle_ID = 1;
+	int Wait = 0;
+	int Basic = 0;
+	int Charge = 0;
+	float Travel = 0;
+	int count = 0;
+	for (int i = 0; i < Sequence.size(); i++) {
+		if (Sequence[i].vehicle.ID != vehicle_ID) {
+			//检测到车辆变化
+			count++;
+			Vehicle last_vehicle = Sequence[i - 1].vehicle;
+			vehicle_ID = Sequence[i].vehicle.ID;			//更新上一次使用的车
+			Wait += (last_vehicle.TotalWait * WAIT_COST);
+			Basic += (last_vehicle.BasicCost);
+			Charge += (last_vehicle.ChargeCount * CHARGE_COST);
+			Travel += (last_vehicle.TotalDis * last_vehicle.UnitCost);
+		}
+	}
+	//计算最后一辆车的成本
+	int i = Sequence.size() - 1;
+	Vehicle final_vehicle = Sequence[i].vehicle;
+	Wait += (final_vehicle.TotalWait * WAIT_COST);
+	Basic += (final_vehicle.BasicCost);
+	Charge += (final_vehicle.ChargeCount * CHARGE_COST);
+	Travel += (final_vehicle.TotalDis * final_vehicle.UnitCost);
+	FitValue = Wait + Basic + Charge + Travel;
+	cout << "Total vehicle number: " << count + 1 << endl;
+	cout << "basic cost: " << Basic << endl;
+	cout << "wait cost: " << Wait << endl;
+	cout << "charge cost: " << Charge << endl;
+	cout << "travel cost: " << Travel << endl;
+	cout << "total cost: " << FitValue << endl;
+}
+
+//将该染色体信息记录到文件中
+void Chromosome::RecordToFile(string filename) {
+	ofstream output_file(filename);
+	if (output_file.is_open()) {
+		output_file << "total cost: " << FitValue << endl;
+		for (auto gene : Sequence) {
+			output_file << gene.vehicle.ID << " " << gene.vehicle.type << " " << gene.node.ID << endl;
+		}
+		output_file.close();
+	}
+}
 //还可以考虑优化返回车场途中，经过充电站之后，继续送货
