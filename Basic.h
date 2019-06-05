@@ -7,7 +7,7 @@
 #define GUEST_NUM 1000
 #define CHARGE_NUM 100
 #define DEPOT_NUM 1
-#define MAX_VEHICLE 1000
+#define MAX_VEHICLE 10000
 #define WAIT_COST 24 / 60
 #define CHARGE_COST 50    //一次充电半小时，100RMB/h，这里为了方便使用充电次数计算，回车场充电不计成本
 #include<vector>

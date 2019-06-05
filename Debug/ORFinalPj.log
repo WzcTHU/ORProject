@@ -1,4 +1,7 @@
-﻿  Chromosome.cpp
+﻿  Basic.cpp
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\basic.h(62): warning C4305: “=”: 从“double”到“float”截断
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\basic.h(69): warning C4305: “=”: 从“double”到“float”截断
+  Chromosome.cpp
 e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\basic.h(62): warning C4305: “=”: 从“double”到“float”截断
 e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\basic.h(69): warning C4305: “=”: 从“double”到“float”截断
 e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromosome.cpp(34): warning C4018: “<”: 有符号/无符号不匹配
@@ -9,9 +12,23 @@ e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromos
 e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromosome.cpp(139): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据
 e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromosome.cpp(151): warning C4018: “<=”: 有符号/无符号不匹配
 e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromosome.cpp(160): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
-e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromosome.cpp(315): warning C4018: “<”: 有符号/无符号不匹配
-e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromosome.cpp(322): warning C4244: “+=”: 从“float”转换到“int”，可能丢失数据
-e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromosome.cpp(331): warning C4244: “+=”: 从“float”转换到“int”，可能丢失数据
-e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromosome.cpp(334): warning C4244: “=”: 从“float”转换到“int”，可能丢失数据
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromosome.cpp(322): warning C4018: “<”: 有符号/无符号不匹配
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromosome.cpp(330): warning C4244: “+=”: 从“float”转换到“int”，可能丢失数据
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromosome.cpp(335): warning C4244: “=”: 从“float”转换到“int”，可能丢失数据
+  GAApp.cpp
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\basic.h(62): warning C4305: “=”: 从“double”到“float”截断
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\basic.h(69): warning C4305: “=”: 从“double”到“float”截断
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\gaapp.cpp(39): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\gaapp.cpp(40): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\gaapp.cpp(148): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\gaapp.cpp(149): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\gaapp.cpp(161): warning C4018: “<”: 有符号/无符号不匹配
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\gaapp.cpp(178): warning C4018: “<”: 有符号/无符号不匹配
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\gaapp.cpp(205): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\gaapp.cpp(206): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+  Main.cpp
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\basic.h(62): warning C4305: “=”: 从“double”到“float”截断
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\basic.h(69): warning C4305: “=”: 从“double”到“float”截断
+  正在生成代码...
 e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromosome.cpp(119): warning C4715: “GoBack”: 不是所有的控件路径都返回值
   ORFinalPj.vcxproj -> E:\MyData\Learning_Data\Junior_2\OperationalResearch\ORFinalPj\Debug\ORFinalPj.exe

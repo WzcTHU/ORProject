@@ -83,7 +83,7 @@ void Charge(Node &start_node, int TargetChargeID, Vehicle &this_vehicle) {
 }
 
 //回车场函数
-int GoBack(Node &start_node, Vehicle &this_vehicle, vector<Gene> &routine) {
+int GoBack(Node &start_node, Vehicle &this_vehicle, Routine &routine) {
 	if (this_vehicle.LeftElec >= DisNN[start_node.ID][0]) {
 		//电量足够返回车场
 		this_vehicle.TotalDis += DisNN[start_node.ID][0];			//更新行驶距离
@@ -92,7 +92,7 @@ int GoBack(Node &start_node, Vehicle &this_vehicle, vector<Gene> &routine) {
 		Gene this_G;
 		this_G.vehicle = this_vehicle;
 		this_G.node = start_node;
-		routine.push_back(this_G);		//将起始点加入routine
+		routine.GeneSequence.push_back(this_G);		//将起始点加入routine
 		return 0;
 	}
 	else {
@@ -108,7 +108,7 @@ int GoBack(Node &start_node, Vehicle &this_vehicle, vector<Gene> &routine) {
 			Gene this_G;
 			this_G.vehicle = this_vehicle;
 			this_G.node = start_node;
-			routine.push_back(this_G);		//将起始点加入routine
+			routine.GeneSequence.push_back(this_G);		//将起始点加入routine
 			GoBack(NodeList[TargetChargeID], this_vehicle, routine);
 		}
 		else {
@@ -145,10 +145,10 @@ void Deliver(Node &start_node, int TargetGuestID, Vehicle &this_vehicle) {
 	start_node = NodeList[TargetGuestID];			//更新起始点为当前客户点
 }
 
-void Chromosome::BuildInitGreedy() {
+void Chromosome::WalkGuest(vector<int> VisitedGuest, int start_vehile_ID) {
 	srand((unsigned int)time(NULL));
-	vector<int> VisitedGuest = {};		//用于保存已访问的客户ID
-	for (int i = 1; i <= VehicleID.size(); i++) {		//对每一辆车进行循环
+	//vector<int> VisitedGuest = {};		//用于保存已访问的客户ID
+	for (int i = start_vehile_ID; i <= VehicleID.size(); i++) {		//对每一辆车进行循环
 		if (VisitedGuest.size() == GUEST_NUM) break;
 		Node start_node = NodeList[0];		//每一辆车都是从车场出发
 		int job_finish_by_time = 0;
@@ -177,14 +177,17 @@ void Chromosome::BuildInitGreedy() {
 		}
 
 		Vehicle this_vehicle(type, i);		//实例化选中的车
-
+		//用于保存某辆车形成的所有routine
+		vector<Routine> VehicleRoutine = {};
 		TravelAgain:
 
-		vector<Gene> routine = {};			//用于保存某辆车形成的回路
+		//vector<Gene> routine = {};			
+		//用于保存某辆车形成的回路
+		Routine routine;
 		Gene this_G;
 		this_G.vehicle = this_vehicle;
 		this_G.node = start_node;
-		routine.push_back(this_G);		//将起始点加入routine
+		routine.GeneSequence.push_back(this_G);		//将起始点加入routine
 
 		//拷贝一个已访问列表，防止某条routine失效时其已访问节点被记录到VisitedGuest中
 		vector<int> TempVisitedGuest(VisitedGuest);
@@ -229,7 +232,7 @@ void Chromosome::BuildInitGreedy() {
 							Deliver(start_node, early_ID, this_vehicle);
 							this_G.node = start_node;
 							this_G.vehicle = this_vehicle;
-							routine.push_back(this_G);							//将当前点加入routine
+							routine.GeneSequence.push_back(this_G);							//将当前点加入routine
 							TempVisitedGuest.push_back(start_node.ID);			//将当前点加入已访问客户列表
 						}
 						else {
@@ -262,7 +265,7 @@ void Chromosome::BuildInitGreedy() {
 						Charge(start_node, TargetChargeID, this_vehicle);
 						this_G.node = start_node;
 						this_G.vehicle = this_vehicle;
-						routine.push_back(this_G);		//将当前点加入routine
+						routine.GeneSequence.push_back(this_G);		//将当前点加入routine
 					}
 					else {
 						//否则，返回车场
@@ -290,7 +293,8 @@ void Chromosome::BuildInitGreedy() {
 		}
 		if (state == 0) {
 			//成功返回车场，routine有效，则将其加入Sequence中，并将TempVisitedGuest保存为VisitedGuest
-			Sequence.insert(Sequence.end(), routine.begin(), routine.end());
+			//Sequence.insert(Sequence.end(), routine.begin(), routine.end());
+			VehicleRoutine.push_back(routine);
 			VisitedGuest = TempVisitedGuest;
 			//只要不是因为到时而结束任务，则回车场重新装货、充电，再次派出
 			if (job_finish_by_time == 0) {
@@ -300,6 +304,9 @@ void Chromosome::BuildInitGreedy() {
 				this_vehicle.LeftElec = this_vehicle.DriveRange;
 				this_vehicle.TotalWait += DEPOT_TIME;
 				goto TravelAgain;
+			}
+			else {
+				Sequence.push_back(VehicleRoutine);
 			}
 		}
 	}
@@ -312,32 +319,26 @@ void Chromosome::CalFitValue() {
 	int Charge = 0;
 	float Travel = 0;
 	int count = 0;
-	for (int i = 0; i < Sequence.size(); i++) {
-		if (Sequence[i].vehicle.ID != vehicle_ID) {
-			//检测到车辆变化
+	for (int i = 0; i < Sequence.size() - 1; i++) {
+		int routine_num = Sequence[i].size();
+		int last_routine_len = Sequence[i][routine_num - 1].GeneSequence.size();
+		Vehicle this_vehicle = Sequence[i][routine_num - 1].\
+			GeneSequence[last_routine_len - 1].vehicle;
+		if (this_vehicle.FirstMark != 0) {
 			count++;
-			Vehicle last_vehicle = Sequence[i - 1].vehicle;
-			vehicle_ID = Sequence[i].vehicle.ID;			//更新上一次使用的车
-			Wait += (last_vehicle.TotalWait * WAIT_COST);
-			Basic += (last_vehicle.BasicCost);
-			Charge += (last_vehicle.ChargeCount * CHARGE_COST);
-			Travel += (last_vehicle.TotalDis * last_vehicle.UnitCost);
+			Wait += (this_vehicle.TotalWait * WAIT_COST);
+			Basic += (this_vehicle.BasicCost);
+			Charge += (this_vehicle.ChargeCount * CHARGE_COST);
+			Travel += (this_vehicle.TotalDis * this_vehicle.UnitCost);
 		}
 	}
-	//计算最后一辆车的成本
-	int i = Sequence.size() - 1;
-	Vehicle final_vehicle = Sequence[i].vehicle;
-	Wait += (final_vehicle.TotalWait * WAIT_COST);
-	Basic += (final_vehicle.BasicCost);
-	Charge += (final_vehicle.ChargeCount * CHARGE_COST);
-	Travel += (final_vehicle.TotalDis * final_vehicle.UnitCost);
 	FitValue = Wait + Basic + Charge + Travel;
-	cout << "Total vehicle number: " << count + 1 << endl;
-	cout << "basic cost: " << Basic << endl;
-	cout << "wait cost: " << Wait << endl;
-	cout << "charge cost: " << Charge << endl;
-	cout << "travel cost: " << Travel << endl;
-	cout << "total cost: " << FitValue << endl;
+	//cout << "Total vehicle number: " << count + 1 << endl;
+	//cout << "basic cost: " << Basic << endl;
+	//cout << "wait cost: " << Wait << endl;
+	//cout << "charge cost: " << Charge << endl;
+	//cout << "travel cost: " << Travel << endl;
+	//cout << "total cost: " << FitValue << endl;
 }
 
 //将该染色体信息记录到文件中
@@ -345,8 +346,12 @@ void Chromosome::RecordToFile(string filename) {
 	ofstream output_file(filename);
 	if (output_file.is_open()) {
 		output_file << "total cost: " << FitValue << endl;
-		for (auto gene : Sequence) {
-			output_file << gene.vehicle.ID << " " << gene.vehicle.type << " " << gene.node.ID << endl;
+		for (auto vr : Sequence) {
+			for (auto r : vr) {
+				for (auto g : r.GeneSequence) {
+					output_file << g.vehicle.ID << " " << g.vehicle.type << " " << g.node.ID << endl;
+				}
+			}
 		}
 		output_file.close();
 	}

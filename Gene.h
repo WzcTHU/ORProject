@@ -11,4 +11,12 @@ public:
 	Gene() {};
 	~Gene() {};
 };
+
+class Routine {
+public:
+	vector<Gene> GeneSequence;
+public:
+	Routine() : GeneSequence({}) {};
+	~Routine() {};
+};
 #endif // !GENE_H

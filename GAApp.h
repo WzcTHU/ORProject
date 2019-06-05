@@ -11,6 +11,7 @@ public:
 	~GAApp() {};
 	void InitAll();
 	void MakeInitPopulation(int greedy_num, int random_num);
+	vector<Chromosome> CrossOver(Chromosome c1, Chromosome c2);
 	void Run();
 };
 #endif // !GAAPP_H

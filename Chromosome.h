@@ -10,16 +10,13 @@ using std::string;
 class Chromosome {
 public:
 	int FitValue;		//适应度
-	vector<Gene> Sequence;
+	vector<vector<Routine>> Sequence;
 
 public:
 	Chromosome() : Sequence({}) {};
 	~Chromosome() {};
 	void CalFitValue();
 	void RecordToFile(string filename);
-	void BuildInitGreedy();			//用贪心算法构造初始解
-	void BuildInitRandom();			//随机构造初始解
-	void FTDIH();
-	void OTDIH();
+	void WalkGuest(vector<int> VisitedGuest, int start_vehile_ID);			//用贪心算法构造初始解
 };
 #endif // !CHROMOSOME_H
