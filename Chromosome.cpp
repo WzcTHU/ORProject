@@ -6,7 +6,7 @@
 #include"Chromosome.h"
 using namespace std;
 #define MAX_DIS 100000
-#define MAX_NEIGHBOUR 10
+#define MAX_NEIGHBOUR 5
 
 vector<int> FindClosest(int start_ID, vector<int> NodeDis, vector<int> VisitedGuest, int is_guest) {
 	vector<int> temp_v(NodeDis);
@@ -158,7 +158,18 @@ void Chromosome::BuildInitGreedy() {
 
 		if (change_type_2 == 0) {
 			float dice = rand() / double(RAND_MAX);
-			type = (dice > 0.5) ? 1 : 2;	//以0.5的概率从1，2类型里面选择一种车
+			if (VisitedGuest.size() <= (GUEST_NUM - 10)) {
+				type = (dice > 0.5) ? 1 : 2;	
+			}
+			/*else if ((GUEST_NUM - 500) < VisitedGuest.size() <= (GUEST_NUM - 200)) {
+				type = (dice > 0.7) ? 1 : 2;	
+			}
+			else if ((GUEST_NUM - 200) < VisitedGuest.size() <= (GUEST_NUM - 10)) {
+				type = (dice > 0.2) ? 1 : 2;	
+			}*/
+			else {
+				type = (dice > 0.01) ? 1 : 2;	//剩余客户较少时，倾向于使用1型车
+			}
 		}
 		else if (change_type_2 == 1) {
 			type = 2;

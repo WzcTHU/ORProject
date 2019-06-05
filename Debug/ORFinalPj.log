@@ -1,1 +1,17 @@
-﻿
+﻿  Chromosome.cpp
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\basic.h(62): warning C4305: “=”: 从“double”到“float”截断
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\basic.h(69): warning C4305: “=”: 从“double”到“float”截断
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromosome.cpp(34): warning C4018: “<”: 有符号/无符号不匹配
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromosome.cpp(42): warning C4018: “<”: 有符号/无符号不匹配
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromosome.cpp(61): warning C4018: “<”: 有符号/无符号不匹配
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromosome.cpp(78): warning C4244: “+=”: 从“double”转换到“int”，可能丢失数据
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromosome.cpp(127): warning C4244: “+=”: 从“double”转换到“int”，可能丢失数据
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromosome.cpp(139): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromosome.cpp(151): warning C4018: “<=”: 有符号/无符号不匹配
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromosome.cpp(160): warning C4244: “初始化”: 从“double”转换到“float”，可能丢失数据
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromosome.cpp(315): warning C4018: “<”: 有符号/无符号不匹配
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromosome.cpp(322): warning C4244: “+=”: 从“float”转换到“int”，可能丢失数据
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromosome.cpp(331): warning C4244: “+=”: 从“float”转换到“int”，可能丢失数据
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromosome.cpp(334): warning C4244: “=”: 从“float”转换到“int”，可能丢失数据
+e:\mydata\learning_data\junior_2\operationalresearch\orfinalpj\orfinalpj\chromosome.cpp(119): warning C4715: “GoBack”: 不是所有的控件路径都返回值
+  ORFinalPj.vcxproj -> E:\MyData\Learning_Data\Junior_2\OperationalResearch\ORFinalPj\Debug\ORFinalPj.exe

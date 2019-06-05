@@ -30,7 +30,7 @@ void GAApp::MakeInitPopulation(int greedy_num, int random_num) {
 
 void GAApp::Run() {
 	InitAll();
-	MakeInitPopulation(10, 0);
+	MakeInitPopulation(100, 0);
 	//for (auto gene : population[0].Sequence) {
 	//	cout << gene.vehicle.ID << " " << gene.vehicle.type << " " << gene.vehicle.TotalDis << " " << gene.node.ID << endl;
 	//}
