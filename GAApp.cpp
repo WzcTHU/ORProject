@@ -4,7 +4,7 @@
 #include<algorithm>
 #include<conio.h>
 #include"GAApp.h"
-#define CROSS_ITERATION 10000				//种群交叉次数
+#define CROSS_ITERATION 20000				//种群交叉次数
 #define IDENTITY_CROSS_NUM 1			//每对染色体交叉次数
 #define POPULATION_NUM 100
 using namespace std;
@@ -12,6 +12,7 @@ using namespace std;
 void GAApp::InitAll() {
 	InitNN("input_distance-time.txt");
 	InitNodeList("input_node.txt");
+	InitGL();
 	InitNodeID();
 	InitVehicleID();
 }
@@ -27,7 +28,7 @@ void GAApp::MakeInitPopulation(int greedy_num, int random_num) {
 		stringstream ss2;
 		m_chro.WalkGuest({}, 1);		//已访问列表为空，从1号车开始走
 		population.push_back(m_chro);
-		m_chro.CalFitValue();
+		m_chro.CalFitValue(1);
 		ss2 << m_chro.FitValue;
 		m_chro.RecordToFile("population\\chro_FitValue_" + ss2.str() + ".txt");
 	}
@@ -65,10 +66,7 @@ vector<Chromosome> GAApp::CrossOver(Chromosome c1, Chromosome c2) {
 	}
 	sort(c1_cross_guest.begin(), c1_cross_guest.end());
 	sort(c2_cross_guest.begin(), c2_cross_guest.end());
-	vector<int> AllGuestList = {};
-	for (int i = DEPOT_NUM; i < DEPOT_NUM + GUEST_NUM; i++) {
-		AllGuestList.push_back(i);
-	}
+
 	vector<int> same_node = {};
 	vector<int> c1_diff = {};
 	vector<int> c2_diff = {};
@@ -90,61 +88,69 @@ vector<Chromosome> GAApp::CrossOver(Chromosome c1, Chromosome c2) {
 	else {
 		//有不同点，则c1_diff就是sub_c1中缺少的点，c2_diff就是sub_c1中重复的点
 		for (vector<vector<Routine>>::iterator iter = sub_c1.Sequence.begin();\
-			iter != sub_c1.Sequence.end(); iter++) {
+			iter != sub_c1.Sequence.end(); ) {
+			int no_sub = 0;
+			//int at_end = 0;
 			for (auto r : *iter) {
 				for (auto g : r.GeneSequence) {
 					if (find(c2_diff.begin(), c2_diff.end(), g.node.ID) != c2_diff.end()) {
-						//该vehicle_routine中有重复点，则将该vehicle_routine中的每一个客户点都纳入未访问列表中，并将routine删去
-						for (auto r : *iter) {
-							for (auto g : r.GeneSequence) {
-								if (g.node.type == 2) {
-									UnvisitedGuestC1.push_back(g.node.ID);
-								}
-							}
-						}
-						sub_c1.Sequence.erase(iter);
-						iter = sub_c1.Sequence.begin();
+						iter = sub_c1.Sequence.erase(iter);
+						no_sub = 1;
 						//对于每一个vr来说，只要内部含有一个重复点，就直接跳出检查下一个vr
 						break;
 					}
 				}
 			}
+			if (no_sub == 0) {
+				iter++;
+			}
+			//if (iter == sub_c1.Sequence.end()) {
+			//	break;
+			//}
 		}
-		for (auto n : c1_diff) {
-			UnvisitedGuestC1.push_back(n);
-		}
-		for (vector<vector<Routine>>::iterator iter = sub_c2.Sequence.begin(); \
-			iter != sub_c2.Sequence.end(); iter++) {
-			for (auto r : *iter) {
+		sub_c1.Sequence.push_back(c2.Sequence[c2_cross]);
+		vector<int> VisitedGuestC1 = {};
+		vector<int> VisitedGuestC2 = {};
+		for (auto vr : sub_c1.Sequence) {
+			for (auto r : vr) {
 				for (auto g : r.GeneSequence) {
-					if (find(c1_diff.begin(), c1_diff.end(), g.node.ID) != c1_diff.end()) {
-						//该vehicle_routine中有重复点，则将该vehicle_routine中的每一个客户点都纳入未访问列表中，并将routine删去
-						for (auto r : *iter) {
-							for (auto g : r.GeneSequence) {
-								if (g.node.type == 2) {
-									UnvisitedGuestC2.push_back(g.node.ID);
-								}
-							}
-						}
-						//对于每一个vr来说，只要内部含有一个重复点，就直接跳出检查下一个vr，并将当前vr抹除
-						sub_c2.Sequence.erase(iter);
-						iter = sub_c2.Sequence.begin();
-						break;
+					if (g.node.type == 2) {
+						VisitedGuestC1.push_back(g.node.ID);
 					}
 				}
 			}
 		}
-		for (auto n : c2_diff) {
-			UnvisitedGuestC2.push_back(n);
+		sort(VisitedGuestC1.begin(), VisitedGuestC1.end());
+		for (vector<vector<Routine>>::iterator iter = sub_c2.Sequence.begin(); \
+			iter != sub_c2.Sequence.end(); ) {
+			int no_sub = 0;
+			for (auto r : *iter) {
+				for (auto g : r.GeneSequence) {
+					if (find(c1_diff.begin(), c1_diff.end(), g.node.ID) != c1_diff.end()) {
+						iter = sub_c2.Sequence.erase(iter);
+						no_sub = 1;
+						break;
+					}
+				}
+			}
+			if (no_sub == 0) {
+				iter++;
+			}
 		}
-		sort(UnvisitedGuestC1.begin(), UnvisitedGuestC1.end());
-		sort(UnvisitedGuestC2.begin(), UnvisitedGuestC2.end());
-		vector<int> VisitedGuestC1 = {};
-		vector<int> VisitedGuestC2 = {};
-		set_difference(AllGuestList.begin(), AllGuestList.end(), UnvisitedGuestC1.begin(), \
-			UnvisitedGuestC1.end(), back_inserter(VisitedGuestC1));
-		set_difference(AllGuestList.begin(), AllGuestList.end(), UnvisitedGuestC2.begin(), \
-			UnvisitedGuestC2.end(), back_inserter(VisitedGuestC2));
+		//for (auto n : c2_diff) {
+		//	UnvisitedGuestC2.push_back(n);
+		//}
+		sub_c2.Sequence.push_back(c1.Sequence[c1_cross]);
+		for (auto vr : sub_c2.Sequence) {
+			for (auto r : vr) {
+				for (auto g : r.GeneSequence) {
+					if (g.node.type == 2) {
+						VisitedGuestC2.push_back(g.node.ID);
+					}
+				}
+			}
+		}
+		sort(VisitedGuestC2.begin(), VisitedGuestC2.end());
 		float dice1 = rand() / double(RAND_MAX);
 		float dice2 = rand() / double(RAND_MAX);
 		int vehicle1 = int(10000 * dice1);
@@ -195,11 +201,11 @@ void GAApp::Run() {
 	srand((unsigned int)time(NULL));
 	int c1_index = 0;
 	int c2_index = 0;
+	for (auto &c : population) {
+		c.CalFitValue();
+	}
 	for (int cross_count = 0; cross_count < CROSS_ITERATION; cross_count++) {
 		cout << "Iteration " << cross_count << endl;
-		for (auto &c : population) {
-			c.CalFitValue();
-		}
 
 		//随机选择种群中的两个染色体
 		float dice1 = rand() / double(RAND_MAX);
@@ -229,5 +235,6 @@ void GAApp::Run() {
 		if (_kbhit()) break;
 	}
 	int best_index = ChooseBest(population);
+	population[best_index].CalFitValue(1);
 	population[best_index].RecordToFile("best.txt");
 }

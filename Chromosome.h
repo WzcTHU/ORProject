@@ -15,8 +15,8 @@ public:
 public:
 	Chromosome() : Sequence({}) {};
 	~Chromosome() {};
-	void CalFitValue();
+	void CalFitValue(int show_detial = 0);
 	void RecordToFile(string filename);
-	void WalkGuest(vector<int> VisitedGuest, int start_vehile_ID);			//用贪心算法构造初始解
+	void WalkGuest(vector<int> VisitedGuest, int start_vehile_ID, int add = 0);			//用贪心算法构造初始解
 };
 #endif // !CHROMOSOME_H

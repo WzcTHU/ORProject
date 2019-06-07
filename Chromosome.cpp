@@ -3,12 +3,19 @@
 #include<algorithm>
 #include<time.h>
 #include<fstream>
+#include<set>
 #include"Chromosome.h"
 using namespace std;
 #define MAX_DIS 100000
-#define MAX_NEIGHBOUR 5
+//#define MAX_NEIGHBOUR 5
 
 vector<int> FindClosest(int start_ID, vector<int> NodeDis, vector<int> VisitedGuest, int is_guest) {
+	int MAX_NEIGHBOUR = 5;
+	vector<int> neighbour = { 3, 4, 5, 6, 7 };
+	//加入可变邻域长度因素
+	srand((unsigned int)time(NULL));
+	float dice = rand() / double(RAND_MAX);
+	MAX_NEIGHBOUR = neighbour[4 * int(dice)];
 	vector<int> temp_v(NodeDis);
 	vector<int> result = {};
 	if (is_guest == 1) {
@@ -16,12 +23,10 @@ vector<int> FindClosest(int start_ID, vector<int> NodeDis, vector<int> VisitedGu
 			NodeDis[ID] = MAX_DIS;
 			temp_v[ID] = MAX_DIS;
 		}
+		NodeDis[0] = MAX_DIS;					//将车场排除在外
 	}
 	if ((is_guest == 1) && (start_ID <= GUEST_NUM + DEPOT_NUM - 1)) {	
 		//如果是寻找最近客户点，且不是从充电桩出发寻找
-		if (start_ID != 0) {
-			NodeDis[0] = MAX_DIS;					//将车场排除在外
-		}
 		NodeDis[start_ID] = MAX_DIS;			//将本身排除在外
 	}
 	sort(NodeDis.begin(), NodeDis.end());
@@ -45,6 +50,13 @@ vector<int> FindClosest(int start_ID, vector<int> NodeDis, vector<int> VisitedGu
 				result.push_back(i);
 			}
 		}
+		//加入随机交换最近和最远点因素
+		dice = rand() / double(RAND_MAX);
+		if (dice > 0.8) {
+			int temp = result[0];
+			result[0] = result[result.size() - 1];
+			result[result.size() - 1] = temp;
+		}
 		return result;
 	}
 	return { -1 };
@@ -57,6 +69,16 @@ int SortByTime(vector<int> &close_neighbour) {
 		time_list.push_back(NodeList[ID].Et);
 	}
 	sort(time_list.begin(), time_list.end());
+	if (time_list.size() >= 2) {
+		//加入随机交换最早两点的随机因素
+		srand((unsigned int)time(NULL));
+		int dice = rand() / double(RAND_MAX);
+		if (dice > 0.8) {
+			int temp = time_list[0];
+			time_list[0] = time_list[1];
+			time_list[1] = temp;
+		}
+	}
 	int early_ID = 0;
 	for (int i = 0; i < close_neighbour.size();i++) {
 		if (NodeList[close_neighbour[i]].Et == time_list[0]) {
@@ -70,6 +92,7 @@ int SortByTime(vector<int> &close_neighbour) {
 		}
 		it++;
 	}
+	
 	return early_ID;
 }
 
@@ -109,7 +132,7 @@ int GoBack(Node &start_node, Vehicle &this_vehicle, Routine &routine) {
 			this_G.vehicle = this_vehicle;
 			this_G.node = start_node;
 			routine.GeneSequence.push_back(this_G);		//将起始点加入routine
-			GoBack(NodeList[TargetChargeID], this_vehicle, routine);
+			GoBack(start_node, this_vehicle, routine);
 		}
 		else {
 			//返回车场失败
@@ -125,6 +148,7 @@ void Deliver(Node &start_node, int TargetGuestID, Vehicle &this_vehicle) {
 		>= NodeList[TargetGuestID].Et) {
 		//在最早服务时间之后到达，则不需要等待直接卸货
 		this_vehicle.CurTime += (TimeNN[start_node.ID][TargetGuestID] + UNLOAD_TIME);	//计算新的时间
+		this_vehicle.FirstMark = 1;
 	}
 	else {
 		//在最早服务时间之前到达，需要等待
@@ -145,28 +169,29 @@ void Deliver(Node &start_node, int TargetGuestID, Vehicle &this_vehicle) {
 	start_node = NodeList[TargetGuestID];			//更新起始点为当前客户点
 }
 
-void Chromosome::WalkGuest(vector<int> VisitedGuest, int start_vehile_ID) {
+void Chromosome::WalkGuest(vector<int> VisitedGuest, int start_vehile_ID, int add) {
 	srand((unsigned int)time(NULL));
 	//vector<int> VisitedGuest = {};		//用于保存已访问的客户ID
-	for (int i = start_vehile_ID; i <= VehicleID.size(); i++) {		//对每一辆车进行循环
+	for (int i = start_vehile_ID;; i++) {		//对每一辆车进行循环
+		set<int> st(VisitedGuest.begin(), VisitedGuest.end());
+		VisitedGuest.assign(st.begin(), st.end());
 		if (VisitedGuest.size() == GUEST_NUM) break;
+		if (VisitedGuest.size() > GUEST_NUM) {
+			int stop = 0;
+			sort(VisitedGuest.begin(), VisitedGuest.end());
+			system("pause");
+		}
 		Node start_node = NodeList[0];		//每一辆车都是从车场出发
 		int job_finish_by_time = 0;
 		int change_type_2 = 0;				//强制使用大车
 		int type = 1;
 		int state = -1;			//用于记录当前构造完的routine是否可行
-
+		int zero2zero = 0;		//用于标记00这种routine
 		if (change_type_2 == 0) {
 			float dice = rand() / double(RAND_MAX);
 			if (VisitedGuest.size() <= (GUEST_NUM - 10)) {
 				type = (dice > 0.5) ? 1 : 2;	
 			}
-			/*else if ((GUEST_NUM - 500) < VisitedGuest.size() <= (GUEST_NUM - 200)) {
-				type = (dice > 0.7) ? 1 : 2;	
-			}
-			else if ((GUEST_NUM - 200) < VisitedGuest.size() <= (GUEST_NUM - 10)) {
-				type = (dice > 0.2) ? 1 : 2;	
-			}*/
 			else {
 				type = (dice > 0.01) ? 1 : 2;	//剩余客户较少时，倾向于使用1型车
 			}
@@ -180,8 +205,7 @@ void Chromosome::WalkGuest(vector<int> VisitedGuest, int start_vehile_ID) {
 		//用于保存某辆车形成的所有routine
 		vector<Routine> VehicleRoutine = {};
 		TravelAgain:
-
-		//vector<Gene> routine = {};			
+		
 		//用于保存某辆车形成的回路
 		Routine routine;
 		Gene this_G;
@@ -191,12 +215,9 @@ void Chromosome::WalkGuest(vector<int> VisitedGuest, int start_vehile_ID) {
 
 		//拷贝一个已访问列表，防止某条routine失效时其已访问节点被记录到VisitedGuest中
 		vector<int> TempVisitedGuest(VisitedGuest);
-
-
-		//cout << VisitedGuest.size() << endl;
-		//if (VisitedGuest.size() == 1000) {
-		//	int stop = 0;
-		//}
+		if (i == 117) {
+			int stop = 0;
+		}
 		while (1) {			//对同一辆车，构造完其送货子序列(routine)
 			vector<int>::const_iterator start = DisNN[start_node.ID].begin();
 			vector<int>::const_iterator end = start + GUEST_NUM + DEPOT_NUM;
@@ -227,12 +248,16 @@ void Chromosome::WalkGuest(vector<int> VisitedGuest, int start_vehile_ID) {
 						vector<int> neighbour_charge(start, end);			//截取充电桩向量(每一行)
 						int TargetChargeID = FindClosest(early_ID, neighbour_charge, {}, 0)[0] + GUEST_NUM + DEPOT_NUM;
 						if ((this_vehicle.LeftElec - DisNN[start_node.ID][early_ID] \
-							>= DisNN[early_ID][TargetChargeID]) || (this_vehicle.LeftElec -\
+							>= DisNN[early_ID][TargetChargeID]) || (this_vehicle.LeftElec - \
 							DisNN[start_node.ID][early_ID] >= DisNN[early_ID][0])) {
 							Deliver(start_node, early_ID, this_vehicle);
+							add++;
 							this_G.node = start_node;
 							this_G.vehicle = this_vehicle;
 							routine.GeneSequence.push_back(this_G);							//将当前点加入routine
+							if (start_node.ID == 0) {
+								int stop = 0;
+							}
 							TempVisitedGuest.push_back(start_node.ID);			//将当前点加入已访问客户列表
 						}
 						else {
@@ -245,6 +270,9 @@ void Chromosome::WalkGuest(vector<int> VisitedGuest, int start_vehile_ID) {
 						if (TargetGuestID.size() == 0) {
 							//给出由于因时间而结束的标记，该车不再从车场派出
 							job_finish_by_time = 1;
+							if (start_node.ID == 0) {
+								zero2zero = 1;
+							}
 							state = GoBack(start_node, this_vehicle, routine);
 							break;
 						}
@@ -277,7 +305,7 @@ void Chromosome::WalkGuest(vector<int> VisitedGuest, int start_vehile_ID) {
 			//还需要考虑通过充电站，如果到不了充电站则进行能否回到车场检测，若回不去这条routine直接作废
 			//由于最晚的服务时间是15：30，而从任意客户点回到车场最长只需要95分钟，因此只要电量足够，一定可以按时返回车场，
 			//不需要对车场关闭时间进行额外判断
-			else {	
+			else {
 				//容量不足，回车场
 				if (NodeList[early_ID].Volume >= this_vehicle.Volume) {
 					job_finish_by_time = 1;			//只是借用这个标记，直接退出当前routine，改用大车
@@ -287,14 +315,27 @@ void Chromosome::WalkGuest(vector<int> VisitedGuest, int start_vehile_ID) {
 					job_finish_by_time = 1;			//只是借用这个标记，直接退出当前routine，改用大车
 					change_type_2 = 1;
 				}
+				//int zero2zerocase2 = 0;
+				/*if (start_node.ID == 0) {
+					zero2zerocase2 = 1;
+				}*/
+				if (start_node.ID == 0) {
+					zero2zero = 1;
+				}
 				state = GoBack(start_node, this_vehicle, routine);
+				//if (zero2zerocase2 == 1) {
+				//	routine.GeneSequence.pop_back();
+				//	routine.GeneSequence.pop_back();
+				//}
 				break;
 			}
 		}
 		if (state == 0) {
 			//成功返回车场，routine有效，则将其加入Sequence中，并将TempVisitedGuest保存为VisitedGuest
 			//Sequence.insert(Sequence.end(), routine.begin(), routine.end());
-			VehicleRoutine.push_back(routine);
+			if (zero2zero == 0) {
+				VehicleRoutine.push_back(routine);
+			}
 			VisitedGuest = TempVisitedGuest;
 			//只要不是因为到时而结束任务，则回车场重新装货、充电，再次派出
 			if (job_finish_by_time == 0) {
@@ -306,23 +347,36 @@ void Chromosome::WalkGuest(vector<int> VisitedGuest, int start_vehile_ID) {
 				goto TravelAgain;
 			}
 			else {
-				Sequence.push_back(VehicleRoutine);
+				if (VehicleRoutine.size() != 0) {
+					if ((VehicleRoutine[0].GeneSequence[0].node.ID == 0) && (VehicleRoutine[0].GeneSequence[1].node.ID == 0)) {
+						int donothing = 0;
+					}
+					else {
+						Sequence.push_back(VehicleRoutine);
+					}
+				}
 			}
 		}
 	}
 }
 
-void Chromosome::CalFitValue() {
+void Chromosome::CalFitValue(int show_detial) {
 	int vehicle_ID = 1;
 	int Wait = 0;
 	int Basic = 0;
 	int Charge = 0;
 	float Travel = 0;
 	int count = 0;
-	for (int i = 0; i < Sequence.size() - 1; i++) {
+	for (int i = 0; i < Sequence.size(); i++) {
+		if (i == 188) {
+			int stop = 0;
+		}
 		int routine_num = Sequence[i].size();
+		if (routine_num == 0) {
+			int stop = 0;
+		}
 		int last_routine_len = Sequence[i][routine_num - 1].GeneSequence.size();
-		Vehicle this_vehicle = Sequence[i][routine_num - 1].\
+		Vehicle &this_vehicle = Sequence[i][routine_num - 1].\
 			GeneSequence[last_routine_len - 1].vehicle;
 		if (this_vehicle.FirstMark != 0) {
 			count++;
@@ -333,12 +387,14 @@ void Chromosome::CalFitValue() {
 		}
 	}
 	FitValue = Wait + Basic + Charge + Travel;
-	//cout << "Total vehicle number: " << count + 1 << endl;
-	//cout << "basic cost: " << Basic << endl;
-	//cout << "wait cost: " << Wait << endl;
-	//cout << "charge cost: " << Charge << endl;
-	//cout << "travel cost: " << Travel << endl;
-	//cout << "total cost: " << FitValue << endl;
+	if (show_detial) {
+		cout << "Total vehicle number: " << count + 1 << endl;
+		cout << "basic cost: " << Basic << endl;
+		cout << "wait cost: " << Wait << endl;
+		cout << "charge cost: " << Charge << endl;
+		cout << "travel cost: " << Travel << endl;
+		cout << "total cost: " << FitValue << endl;
+	}
 }
 
 //将该染色体信息记录到文件中

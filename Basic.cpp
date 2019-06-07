@@ -8,8 +8,13 @@ vector<vector<int>> TimeNN(total_num, vector<int>(total_num, 0));		//ÈÎÒâÁ½µã¼äÊ
 vector<int> VehicleID;
 vector<int> NodeID;
 vector<Node> NodeList;			//ÓÃÓÚ±£´æËùÓĞ½ÚµãĞÅÏ¢
+vector<int> AllGuestList;
 
-
+void InitGL() {
+	for (int i = DEPOT_NUM; i < DEPOT_NUM + GUEST_NUM; i++) {
+		AllGuestList.push_back(i);
+	}
+}
 void InitNN(string filename) {
 	ifstream input_file(filename);
 	cout << "Opening file: " << filename << endl;

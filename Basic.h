@@ -84,10 +84,12 @@ void InitNN(string filename);
 void InitVehicleID();
 void InitNodeID();
 void InitNodeList(string filename);
+void InitGL();
 
 extern vector<vector<int>> DisNN;		//任意两点间距离矩阵
 extern vector<vector<int>> TimeNN;		//任意两点间时间矩阵
 extern vector<int> VehicleID;
 extern vector<int> NodeID;
 extern vector<Node> NodeList;			//用于保存所有节点信息
+extern vector<int> AllGuestList;
 #endif // !BASIC_H
